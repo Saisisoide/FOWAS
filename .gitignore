@@ -1,8 +1,13 @@
 # Python
-backend/venv/
+venv/
 __pycache__/
 *.pyc
+
+# Env
 .env
+
+# Alembic cache
+alembic/versions/*.pyc
 
 # Node
 frontend/node_modules/
