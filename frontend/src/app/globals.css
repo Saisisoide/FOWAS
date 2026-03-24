@@ -1,26 +1,60 @@
-@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg:       #111110;
+  --bg-2:     #161615;
+  --bg-3:     #1c1c1a;
+  --border:   #222220;
+  --border-2: #2a2a27;
+  --text-1:   #e8e8e3;
+  --text-2:   #9b9b94;
+  --text-3:   #5a5a54;
+  --text-4:   #3d3d38;
+  --accent:   #4d9e6e;
+  --accent-2: #3a7a55;
+  --accent-bg:#0f1f17;
+  --red:      #9b5f5f;
+  --red-bg:   #1f1514;
+  --amber:    #8a7040;
+  --amber-bg: #1c1810;
+  --green:    #4d9e6e;
+  --green-bg: #0f1f17;
+  --purple:   #6b6585;
+  --purple-bg:#14131c;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+html, body { height: 100%; }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text-2);
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
+
+a { color: inherit; text-decoration: none; }
+button { cursor: pointer; font-family: inherit; }
+input, textarea, select {
+  font-family: inherit;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  color: var(--text-1);
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+}
+input:focus, textarea:focus, select:focus {
+  border-color: var(--border-2);
+}
+input::placeholder, textarea::placeholder { color: var(--text-4); }
+
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
