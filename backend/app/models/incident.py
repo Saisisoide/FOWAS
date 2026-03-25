@@ -1,11 +1,11 @@
 import uuid
 from sqlalchemy import Column, String, Text, DateTime, ForeignKey, Enum, SmallInteger, CheckConstraint
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import enum
 from app.db.database import Base
 from app.models.tag import incident_tags
+from app.db.types import GUID
 
 class SeverityEnum(str, enum.Enum):
     LOW = "LOW"
@@ -37,8 +37,8 @@ class Incident(Base):
         CheckConstraint("linked_to != id", name="no_self_link"),
     )
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    workflow_id = Column(UUID(as_uuid=True), ForeignKey("workflows.id"), nullable=False, index=True)
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    workflow_id = Column(GUID(), ForeignKey("workflows.id"), nullable=False, index=True)
     title = Column(String(255), nullable=False)
     severity = Column(Enum(SeverityEnum), nullable=False)
     impact = Column(SmallInteger, nullable=False)
@@ -46,11 +46,11 @@ class Incident(Base):
     main_category = Column(Enum(CategoryEnum), nullable=False)
     sub_category = Column(String(64), nullable=False)
     notes = Column(Text)
-    linked_to = Column(UUID(as_uuid=True), ForeignKey("incidents.id"), nullable=True)
+    linked_to = Column(GUID(), ForeignKey("incidents.id"), nullable=True)
     status = Column(Enum(StatusEnum), nullable=False, default=StatusEnum.OPEN)
     visibility = Column(Enum(IncidentVisibilityEnum), nullable=False, default=IncidentVisibilityEnum.ORGANISATION)
-    created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
-    assigned_to = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    created_by = Column(GUID(), ForeignKey("users.id"), nullable=False)
+    assigned_to = Column(GUID(), ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
     resolved_at = Column(DateTime, nullable=True)
 

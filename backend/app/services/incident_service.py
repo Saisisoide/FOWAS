@@ -3,7 +3,7 @@ from sqlalchemy import or_, and_
 from fastapi import HTTPException
 from uuid import UUID
 from datetime import datetime
-from app.models.incident import Incident, StatusEnum
+from app.models.incident import Incident, StatusEnum, IncidentVisibilityEnum
 from app.models.workflow import Workflow
 from app.models.tag import Tag
 from app.models.user import User
@@ -43,6 +43,10 @@ def create_incident(db: Session, data: IncidentCreate, user: User) -> Incident:
     if not workflow:
         raise HTTPException(status_code=404, detail="Workflow not found")
 
+    visibility = data.visibility
+    if workflow.organisation_id is None and str(data.visibility) == "ORGANISATION":
+        visibility = IncidentVisibilityEnum.PRIVATE
+
     tags = get_or_create_tags(db, data.tags)
     incident = Incident(
         workflow_id=data.workflow_id,
@@ -54,7 +58,7 @@ def create_incident(db: Session, data: IncidentCreate, user: User) -> Incident:
         sub_category=data.sub_category,
         notes=data.notes,
         linked_to=data.linked_to,
-        visibility=data.visibility,
+        visibility=visibility,
         created_by=user.id,
         tags=tags,
     )

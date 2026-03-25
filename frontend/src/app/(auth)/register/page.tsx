@@ -1,76 +1,109 @@
-'use client'
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { api } from '@/services/api'
-import { useAuth } from '@/hooks/useAuth'
+"use client";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function RegisterPage() {
-  const { login } = useAuth()
-  const router = useRouter()
-  const [form, setForm] = useState({ email: '', password: '', full_name: '' })
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const router = useRouter();
+  const { register } = useAuth();
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    setSubmitting(true);
+
     try {
-      await api.register(form)
-      await login(form.email, form.password)
-      router.push('/dashboard')
-    } catch (err: any) {
-      setError(err.message)
+      await register(fullName, email, password);
+      router.replace("/dashboard");
+    } catch (submissionError) {
+      setError(
+        submissionError instanceof Error ? submissionError.message : "Unable to create account",
+      );
     } finally {
-      setLoading(false)
+      setSubmitting(false);
     }
   }
 
   return (
-    <div style={{ width: 360 }}>
-      <div style={{ marginBottom: 32 }}>
-        <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--text-1)', marginBottom: 4 }}>
-          Create your account
-        </div>
-        <div style={{ fontSize: 12, color: 'var(--text-4)' }}>FOWAS — Reliability Intelligence</div>
+    <div className="w-full max-w-[560px] rounded-[2rem] border border-white/8 bg-[#101621] p-8 shadow-[0_30px_80px_rgba(0,0,0,0.45)] md:p-10">
+      <div className="mb-8">
+        <p className="mono text-xs uppercase tracking-[0.35em] text-[#4f8cff]">
+          Provision Operator
+        </p>
+        <h1 className="mt-4 text-4xl font-bold uppercase tracking-[0.04em] text-white">
+          Create your reliability workspace
+        </h1>
+        <p className="mt-3 text-sm text-slate-400">
+          Register a user account, then continue into the dashboard to create your
+          first organisation, workflow, and incident stream.
+        </p>
       </div>
 
-      <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {(['full_name', 'email', 'password'] as const).map(field => (
-          <div key={field}>
-            <label style={{ fontSize: 11, color: 'var(--text-3)', display: 'block', marginBottom: 6 }}>
-              {field === 'full_name' ? 'Full name' : field.charAt(0).toUpperCase() + field.slice(1)}
-            </label>
-            <input
-              type={field === 'password' ? 'password' : field === 'email' ? 'email' : 'text'}
-              value={form[field]}
-              onChange={e => setForm(p => ({ ...p, [field]: e.target.value }))}
-              required
-            />
-          </div>
-        ))}
+      <form className="space-y-5" onSubmit={handleSubmit}>
+        <div className="space-y-2">
+          <label className="mono text-xs uppercase tracking-[0.24em] text-slate-400">
+            Full Name
+          </label>
+          <input
+            value={fullName}
+            onChange={(event) => setFullName(event.target.value)}
+            className="fowas-input w-full"
+            placeholder="Reliability Operator"
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="mono text-xs uppercase tracking-[0.24em] text-slate-400">
+            Email
+          </label>
+          <input
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            type="email"
+            className="fowas-input w-full"
+            placeholder="operator@fowas.dev"
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="mono text-xs uppercase tracking-[0.24em] text-slate-400">
+            Password
+          </label>
+          <input
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            type="password"
+            minLength={6}
+            className="fowas-input w-full"
+            placeholder="At least 6 characters"
+            required
+          />
+        </div>
 
-        {error && (
-          <div style={{ fontSize: 12, color: 'var(--red)', background: 'var(--red-bg)', padding: '8px 12px', borderRadius: 6 }}>
+        {error ? (
+          <div className="rounded-2xl border border-red-500/20 bg-red-500/8 px-4 py-3 text-sm text-red-200">
             {error}
           </div>
-        )}
+        ) : null}
 
-        <button type="submit" disabled={loading} style={{
-          marginTop: 4, padding: '8px 16px', borderRadius: 6,
-          background: 'var(--text-1)', color: 'var(--bg)',
-          border: 'none', fontSize: 13, fontWeight: 500,
-          opacity: loading ? 0.6 : 1,
-        }}>
-          {loading ? 'Creating...' : 'Create account'}
+        <button type="submit" disabled={submitting} className="fowas-button w-full px-5 py-4">
+          {submitting ? "Creating account..." : "Create Account"}
         </button>
       </form>
 
-      <div style={{ marginTop: 20, fontSize: 12, color: 'var(--text-4)', textAlign: 'center' }}>
-        Already have an account?{' '}
-        <Link href="/login" style={{ color: 'var(--accent)' }}>Sign in</Link>
-      </div>
+      <p className="mt-6 text-sm text-slate-400">
+        Already registered?{" "}
+        <Link href="/login" className="font-semibold text-[#71a0ff]">
+          Sign in
+        </Link>
+      </p>
     </div>
-  )
+  );
 }
