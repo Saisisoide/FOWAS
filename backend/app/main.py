@@ -36,3 +36,12 @@ def health():
 @app.get("/")
 def root():
     return {"message": "FOWAS backend running"}
+@app.get("/debug-db")
+def debug_db():
+    from app.db import engine
+    try:
+        conn = engine.connect()
+        conn.close()
+        return {"db": "connected"}
+    except Exception as e:
+        return {"error": str(e)}
