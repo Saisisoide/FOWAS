@@ -12,6 +12,7 @@ import {
   getWorkflowRisk,
 } from "@/lib/fowas";
 import { getIncidents, getWorkflows } from "@/services/api";
+import { exportIncidentsCSV, exportDashboardPDF } from "@/lib/export";
 import type { Incident, Workflow } from "@/types";
 
 export default function AnalyticsPage() {
@@ -42,13 +43,33 @@ export default function AnalyticsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <p className="mono text-xs uppercase tracking-[0.34em] text-[#4f8cff]">
-          Analytics Layer
-        </p>
-        <h1 className="mt-3 text-5xl font-bold uppercase tracking-tight text-white">
-          Quantified Reliability
-        </h1>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="mono text-xs uppercase tracking-[0.34em] text-[#4f8cff]">
+            Analytics Layer
+          </p>
+          <h1 className="mt-3 text-5xl font-bold uppercase tracking-tight text-white">
+            Quantified Reliability
+          </h1>
+        </div>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => exportIncidentsCSV(filtered, workflows)}
+            disabled={loading || filtered.length === 0}
+            className="chip mono text-xs uppercase tracking-[0.22em] transition hover:border-[#28d26f] hover:text-[#28d26f] disabled:opacity-30"
+          >
+            Export CSV
+          </button>
+          <button
+            type="button"
+            onClick={() => exportDashboardPDF(filtered, workflows)}
+            disabled={loading || filtered.length === 0}
+            className="chip mono text-xs uppercase tracking-[0.22em] transition hover:border-[#4484ff] hover:text-[#4484ff] disabled:opacity-30"
+          >
+            Export PDF
+          </button>
+        </div>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
