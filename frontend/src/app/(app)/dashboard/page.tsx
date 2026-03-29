@@ -19,6 +19,7 @@ import {
   statusColors,
 } from "@/lib/fowas";
 import { getIncidents, getOrganisations, getWorkflows } from "@/services/api";
+import { exportIncidentsCSV, exportDashboardPDF } from "@/lib/export";
 import type { DashboardFilters, Incident, Organisation, Workflow } from "@/types";
 
 function StatCard({
@@ -149,6 +150,23 @@ export default function DashboardPage() {
               {severity}
             </button>
           ))}
+          <span className="mx-1 self-center text-white/10">|</span>
+          <button
+            type="button"
+            onClick={() => exportIncidentsCSV(filteredIncidents, workflows)}
+            disabled={loading || filteredIncidents.length === 0}
+            className="chip mono text-xs uppercase tracking-[0.22em] transition hover:border-[#28d26f] hover:text-[#28d26f] disabled:opacity-30"
+          >
+            Export CSV
+          </button>
+          <button
+            type="button"
+            onClick={() => exportDashboardPDF(filteredIncidents, workflows)}
+            disabled={loading || filteredIncidents.length === 0}
+            className="chip mono text-xs uppercase tracking-[0.22em] transition hover:border-[#4484ff] hover:text-[#4484ff] disabled:opacity-30"
+          >
+            Export PDF
+          </button>
         </div>
       </section>
 
