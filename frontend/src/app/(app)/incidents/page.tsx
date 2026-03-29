@@ -10,6 +10,7 @@ import {
   statusColors,
 } from "@/lib/fowas";
 import { getIncidents, getWorkflows, updateIncident } from "@/services/api";
+import { exportIncidentsCSV } from "@/lib/export";
 import type { Incident, Status, Workflow } from "@/types";
 
 export default function IncidentsPage() {
@@ -87,9 +88,14 @@ export default function IncidentsPage() {
           ) : null}
         </div>
         <div className="flex items-center gap-3">
-          <span className="mono text-xs uppercase tracking-[0.28em] text-slate-500">
-            Auto-refresh: 30s
-          </span>
+          <button
+            type="button"
+            onClick={() => exportIncidentsCSV(filteredIncidents, workflows)}
+            disabled={loading || filteredIncidents.length === 0}
+            className="chip mono text-xs uppercase tracking-[0.22em] transition hover:border-[#28d26f] hover:text-[#28d26f] disabled:opacity-30"
+          >
+            Export CSV
+          </button>
           <button type="button" onClick={() => setModalOpen(true)} className="fowas-button px-5 py-3">
             Log Incident
           </button>
