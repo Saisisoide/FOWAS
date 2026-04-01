@@ -31,22 +31,22 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="w-full max-w-[520px] rounded-[2rem] border border-white/8 bg-[#101621] p-8 shadow-[0_30px_80px_rgba(0,0,0,0.45)] md:p-10">
+    <div className="w-full max-w-[480px] rounded-[var(--radius-xl)] border border-white/8 bg-[#101621] p-8 shadow-[0_24px_60px_rgba(0,0,0,0.4)] md:p-10">
       <div className="mb-8">
-        <p className="mono text-xs uppercase tracking-[0.35em] text-[#4f8cff]">
+        <p className="mono text-[11px] uppercase tracking-widest text-[var(--blue-muted)]">
           Operator Login
         </p>
-        <h1 className="mt-4 text-4xl font-bold uppercase tracking-[0.04em] text-white">
-          Welcome to FOWAS....
+        <h1 className="mt-3 text-2xl font-bold tracking-tight text-white">
+          Welcome to FOWAS
         </h1>
-        <p className="mt-3 text-sm text-slate-400">
+        <p className="mt-2 text-[13px] leading-relaxed text-slate-400">
           Sign in to review incidents, manage workflows, and monitor reliability metrics.
         </p>
       </div>
 
       <form className="space-y-5" onSubmit={handleSubmit}>
         <div className="space-y-2">
-          <label className="mono text-xs uppercase tracking-[0.24em] text-slate-400">
+          <label className="text-xs font-medium text-slate-400">
             Email
           </label>
           <input
@@ -59,7 +59,7 @@ export default function LoginPage() {
           />
         </div>
         <div className="space-y-2">
-          <label className="mono text-xs uppercase tracking-[0.24em] text-slate-400">
+          <label className="text-xs font-medium text-slate-400">
             Password
           </label>
           <input
@@ -73,19 +73,19 @@ export default function LoginPage() {
         </div>
 
         {error ? (
-          <div className="rounded-2xl border border-red-500/20 bg-red-500/8 px-4 py-3 text-sm text-red-200">
+          <div className="rounded-[var(--radius-md)] border border-red-500/20 bg-red-500/8 px-4 py-3 text-sm text-red-300">
             {error}
           </div>
         ) : null}
 
-        <button type="submit" disabled={submitting} className="fowas-button w-full px-5 py-4">
-          {submitting ? "Authorizing..." : "Enter FOWAS"}
+        <button type="submit" disabled={submitting} className="fowas-button w-full px-5 py-3">
+          {submitting ? "Signing in…" : "Sign In"}
         </button>
       </form>
 
-      <p className="mt-6 text-sm text-slate-400">
+      <p className="mt-6 text-sm text-slate-500">
         New operator?{" "}
-        <Link href="/register" className="font-semibold text-[#71a0ff]">
+        <Link href="/register" className="font-medium text-[var(--blue-muted)] hover:text-white transition-colors">
           Create an account
         </Link>
       </p>
