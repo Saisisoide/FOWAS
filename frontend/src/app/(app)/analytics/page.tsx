@@ -15,6 +15,15 @@ import { getIncidents, getWorkflows } from "@/services/api";
 import { exportIncidentsCSV, exportDashboardPDF } from "@/lib/export";
 import type { Incident, Workflow } from "@/types";
 
+function LoadingPlaceholder({ label }: { label: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-3 py-12">
+      <div className="skeleton h-1.5 w-24 rounded-full" />
+      <p className="text-xs text-slate-600">{label}</p>
+    </div>
+  );
+}
+
 export default function AnalyticsPage() {
   const { filters, setWorkflows: setGlobalWorkflows } = useGlobalFilters();
   const [incidents, setIncidents] = useState<Incident[]>([]);
@@ -45,11 +54,11 @@ export default function AnalyticsPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="mono text-xs uppercase tracking-[0.34em] text-[#4f8cff]">
-            Analytics Layer
+          <p className="mono text-[11px] uppercase tracking-widest text-[var(--blue-muted)]">
+            Analytics
           </p>
-          <h1 className="mt-3 text-5xl font-bold uppercase tracking-tight text-white">
-            Quantified Reliability
+          <h1 className="mt-1.5 text-2xl font-bold tracking-tight text-white">
+            Reliability Metrics
           </h1>
         </div>
         <div className="flex gap-2">
@@ -57,7 +66,7 @@ export default function AnalyticsPage() {
             type="button"
             onClick={() => exportIncidentsCSV(filtered, workflows)}
             disabled={loading || filtered.length === 0}
-            className="chip mono text-xs uppercase tracking-[0.22em] transition hover:border-[#28d26f] hover:text-[#28d26f] disabled:opacity-30"
+            className="chip text-xs transition hover:border-[var(--green)] hover:text-[var(--green)] disabled:opacity-30 disabled:cursor-not-allowed"
           >
             Export CSV
           </button>
@@ -65,7 +74,7 @@ export default function AnalyticsPage() {
             type="button"
             onClick={() => exportDashboardPDF(filtered, workflows)}
             disabled={loading || filtered.length === 0}
-            className="chip mono text-xs uppercase tracking-[0.22em] transition hover:border-[#4484ff] hover:text-[#4484ff] disabled:opacity-30"
+            className="chip text-xs transition hover:border-[var(--blue)] hover:text-[var(--blue)] disabled:opacity-30 disabled:cursor-not-allowed"
           >
             Export PDF
           </button>
@@ -75,14 +84,14 @@ export default function AnalyticsPage() {
       <div className="grid gap-6 xl:grid-cols-2">
         <Panel title="Severity Distribution">
           {loading ? (
-            <p className="mono text-sm uppercase tracking-[0.2em] text-slate-500">Loading...</p>
+            <LoadingPlaceholder label="Loading…" />
           ) : (
             <BarChart data={getSeverityBreakdown(filtered)} />
           )}
         </Panel>
         <Panel title="Risk Distribution">
           {loading ? (
-            <p className="mono text-sm uppercase tracking-[0.2em] text-slate-500">Loading...</p>
+            <LoadingPlaceholder label="Loading…" />
           ) : (
             <BarChart data={getRiskDistribution(filtered)} />
           )}
@@ -92,14 +101,14 @@ export default function AnalyticsPage() {
       <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
         <Panel title="Workflow Risk Comparison">
           {loading ? (
-            <p className="mono text-sm uppercase tracking-[0.2em] text-slate-500">Loading...</p>
+            <LoadingPlaceholder label="Loading…" />
           ) : (
             <ProgressList data={getWorkflowRisk(filtered, workflows)} maxValue={30} />
           )}
         </Panel>
         <Panel title="Impact vs Severity">
           {loading ? (
-            <p className="mono text-sm uppercase tracking-[0.2em] text-slate-500">Loading...</p>
+            <LoadingPlaceholder label="Loading…" />
           ) : (
             <ScatterPlot points={getScatterPoints(filtered)} />
           )}
