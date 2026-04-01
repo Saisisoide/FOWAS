@@ -60,41 +60,50 @@ export default function OrganisationsPage() {
             placeholder="Organisation name"
             required
           />
-          <p className="text-sm text-slate-400">
+          <p className="text-[13px] text-slate-500">
             Organisations define the sharing boundary for workflows, incidents, and analytics.
           </p>
-          {error ? <p className="text-sm text-red-200">{error}</p> : null}
-          <button type="submit" disabled={submitting} className="fowas-button px-5 py-3">
-            {submitting ? "Creating..." : "Create Organisation"}
+          {error ? (
+            <div className="rounded-[var(--radius-md)] border border-red-500/20 bg-red-500/8 px-4 py-3 text-sm text-red-300">
+              {error}
+            </div>
+          ) : null}
+          <button type="submit" disabled={submitting} className="fowas-button px-5 py-2.5 text-[13px]">
+            {submitting ? "Creating…" : "Create Organisation"}
           </button>
         </form>
       </Panel>
 
       <Panel title="Organisation Directory" eyebrow="Current Memberships">
-        <div className="space-y-4">
+        <div className="space-y-3">
           {loading ? (
-            <p className="mono text-sm uppercase tracking-[0.2em] text-slate-500">
-              Loading organisations...
-            </p>
+            <div className="space-y-3">
+              {[1, 2].map((i) => (
+                <div key={i} className="skeleton h-20 w-full" />
+              ))}
+            </div>
           ) : organisations.length === 0 ? (
-            <p className="text-sm text-slate-500">
-              No organisations yet. Create one to unlock shared workflows and visibility controls.
-            </p>
+            <div className="py-10 text-center">
+              <p className="text-sm text-slate-500">
+                No organisations yet.
+              </p>
+              <p className="mt-1 text-xs text-slate-600">
+                Create one to unlock shared workflows and visibility controls.
+              </p>
+            </div>
           ) : (
             organisations.map((organisation) => (
-              <div key={organisation.id} className="rounded-[1.5rem] border border-white/8 bg-white/[0.03] p-5">
+              <div key={organisation.id} className="rounded-[var(--radius-lg)] border border-white/8 bg-white/[0.025] p-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <h3 className="text-2xl font-semibold uppercase tracking-[0.04em] text-white">
+                    <h3 className="text-sm font-semibold text-white">
                       {organisation.name}
                     </h3>
-                    <p className="mono mt-2 text-xs uppercase tracking-[0.2em] text-slate-500">
+                    <p className="mt-1 text-xs text-slate-500">
                       Created {new Date(organisation.created_at).toLocaleDateString()}
                     </p>
                   </div>
-                  <span className="chip mono text-xs uppercase tracking-[0.2em]">
-                    Active
-                  </span>
+                  <span className="chip text-xs">Active</span>
                 </div>
               </div>
             ))
