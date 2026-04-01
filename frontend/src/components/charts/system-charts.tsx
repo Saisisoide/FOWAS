@@ -13,9 +13,13 @@ export function BarChart({
     <div className="flex h-full flex-col justify-between">
       <div className="flex items-end gap-3" style={{ height }}>
         {data.map((item) => (
-          <div key={item.label} className="flex flex-1 flex-col justify-end gap-2">
+          <div key={item.label} className="group relative flex flex-1 flex-col items-center justify-end gap-2">
+            {/* Value tooltip on hover */}
+            <span className="mono text-[11px] tabular-nums text-slate-500 opacity-0 transition-opacity group-hover:opacity-100">
+              {item.value}
+            </span>
             <div
-              className="rounded-t-md"
+              className="w-full rounded-t-md transition-all duration-300"
               style={{
                 height: `${(item.value / max) * 100}%`,
                 minHeight: item.value > 0 ? 16 : 4,
@@ -26,9 +30,12 @@ export function BarChart({
           </div>
         ))}
       </div>
-      <div className="mt-4 flex items-center justify-between gap-3 text-[11px] uppercase tracking-[0.24em] text-slate-500">
-        <span className="mono">{data[0]?.label ?? ""}</span>
-        <span className="mono">{data[data.length - 1]?.label ?? ""}</span>
+      <div className="mt-4 flex items-center justify-between gap-2">
+        {data.map((item) => (
+          <span key={item.label} className="flex-1 text-center text-[11px] text-slate-500">
+            {item.label}
+          </span>
+        ))}
       </div>
     </div>
   );
@@ -56,23 +63,28 @@ export function DonutChart({
     }, []);
 
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-8">
+    <div className="flex h-full flex-col items-center justify-center gap-6">
       <div
-        className="relative flex h-40 w-40 items-center justify-center rounded-full"
+        className="relative flex h-36 w-36 items-center justify-center rounded-full"
         style={{
           background: `conic-gradient(${gradient.join(", ")})`,
         }}
       >
-        <div className="absolute inset-[14px] rounded-full bg-[#111722]" />
+        <div className="absolute inset-[12px] rounded-full bg-[#111722]" />
         <div className="relative z-10 text-center">
-          <div className="mono text-4xl font-semibold text-white">{valueLabel}</div>
+          <div className="mono text-3xl font-semibold tabular-nums text-white">{valueLabel}</div>
         </div>
       </div>
-      <div className="flex gap-6">
+      <div className="flex flex-wrap justify-center gap-x-5 gap-y-1">
         {data.map((item) => (
-          <div key={item.label} className="mono text-xs uppercase tracking-[0.24em]">
-            <span style={{ color: item.color }}>
-              {item.label} ({Math.round((item.value / total) * 100)}%)
+          <div key={item.label} className="flex items-center gap-2 text-xs text-slate-400">
+            <span
+              className="inline-block h-2 w-2 rounded-full"
+              style={{ background: item.color }}
+            />
+            <span>{item.label}</span>
+            <span className="mono tabular-nums text-slate-500">
+              {Math.round((item.value / total) * 100)}%
             </span>
           </div>
         ))}
@@ -116,7 +128,7 @@ export function LineAreaChart({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <svg viewBox={`0 0 ${width} ${height}`} className="h-[320px] w-full">
         {[0, 1, 2, 3, 4].map((step) => {
           const y = padding + (step / 4) * (height - padding * 2);
@@ -127,7 +139,7 @@ export function LineAreaChart({
               x2={width - padding}
               y1={y}
               y2={y}
-              stroke="rgba(148, 163, 184, 0.08)"
+              stroke="rgba(148, 163, 184, 0.07)"
             />
           );
         })}
@@ -141,29 +153,31 @@ export function LineAreaChart({
               x2={x}
               y1={padding}
               y2={height - padding}
-              stroke="rgba(148, 163, 184, 0.08)"
+              stroke="rgba(148, 163, 184, 0.05)"
             />
           );
         })}
         {lines.map((line) => (
           <g key={line.key}>
             {!line.dashed ? (
-              <path d={createAreaPath(line.key)} fill={`${line.color}18`} />
+              <path d={createAreaPath(line.key)} fill={`${line.color}12`} />
             ) : null}
             <path
               d={createPath(line.key)}
               stroke={line.color}
-              strokeWidth="3"
+              strokeWidth="2.5"
               fill="none"
               strokeDasharray={line.dashed ? "8 8" : undefined}
+              strokeLinecap="round"
+              strokeLinejoin="round"
             />
           </g>
         ))}
       </svg>
 
-      <div className="flex items-center justify-between gap-2 text-[11px] uppercase tracking-[0.24em] text-slate-500">
+      <div className="flex items-center justify-between gap-2 text-[11px] text-slate-500">
         {data.filter((_, index) => index % Math.ceil(data.length / 5 || 1) === 0).map((row) => (
-          <span key={row.date} className="mono">
+          <span key={row.date}>
             {formatShortDate(row.date)}
           </span>
         ))}
@@ -182,25 +196,31 @@ export function ProgressList({
   const max = maxValue ?? Math.max(...data.map((item) => item.value), 1);
 
   return (
-    <div className="space-y-6">
-      {data.map((item) => (
-        <div key={item.label} className="space-y-2">
-          <div className="flex items-center justify-between gap-3">
-            <div className="mono text-xs uppercase tracking-[0.2em] text-slate-400">
-              {item.label}
+    <div className="space-y-5">
+      {data.length === 0 ? (
+        <p className="py-6 text-center text-sm text-slate-500">
+          No workflow data available.
+        </p>
+      ) : (
+        data.map((item) => (
+          <div key={item.label} className="space-y-2">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-xs font-medium text-slate-300 truncate">
+                {item.label}
+              </span>
+              <span className="mono text-xs tabular-nums text-[var(--green)]">
+                {Math.round((item.value / max) * 100)}%
+              </span>
             </div>
-            <div className="mono text-xs uppercase tracking-[0.18em] text-[#28d26f]">
-              {Math.round((item.value / max) * 100)}%
+            <div className="h-1.5 rounded-full bg-white/[0.05]">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-[var(--blue)] to-[var(--green)] transition-all duration-500"
+                style={{ width: `${(item.value / max) * 100}%` }}
+              />
             </div>
           </div>
-          <div className="h-2 rounded-full bg-white/5">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-[#4f8cff] to-[#28d26f]"
-              style={{ width: `${(item.value / max) * 100}%` }}
-            />
-          </div>
-        </div>
-      ))}
+        ))
+      )}
     </div>
   );
 }
@@ -211,28 +231,28 @@ export function ScatterPlot({
   points: { x: number; y: number; label: string; color: string }[];
 }) {
   return (
-    <div className="relative h-[260px] rounded-[1.25rem] border border-white/6 bg-black/20">
+    <div className="relative h-[260px] rounded-[var(--radius-lg)] border border-white/6 bg-black/20">
       <div className="absolute inset-0 grid grid-cols-5 grid-rows-3">
         {Array.from({ length: 15 }).map((_, index) => (
-          <div key={index} className="border border-white/5" />
+          <div key={index} className="border border-white/[0.04]" />
         ))}
       </div>
       {points.map((point) => (
         <div
           key={`${point.label}-${point.x}-${point.y}`}
           title={point.label}
-          className="absolute h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/30"
+          className="absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/25 transition-transform hover:scale-150"
           style={{
             left: `${(point.x / 10) * 100}%`,
             top: `${100 - (point.y / 3) * 100}%`,
             background: point.color,
-            boxShadow: `0 0 18px ${point.color}55`,
+            boxShadow: `0 0 14px ${point.color}44`,
           }}
         />
       ))}
-      <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between text-[11px] uppercase tracking-[0.24em] text-slate-500">
-        <span className="mono">Impact 1</span>
-        <span className="mono">Impact 10</span>
+      <div className="absolute bottom-2.5 left-4 right-4 flex items-center justify-between text-[11px] text-slate-500">
+        <span>Impact 1</span>
+        <span>Impact 10</span>
       </div>
     </div>
   );
