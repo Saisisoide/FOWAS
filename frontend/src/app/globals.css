@@ -1,0 +1,219 @@
+@import "tailwindcss";
+
+:root {
+  --background: #060810;
+  --background-elevated: #0b0e18;
+  --background-panel: #0d1019;
+  --background-panel-strong: #12151f;
+  --foreground: #e8ecf4;
+  --muted: #6b7a96;
+  --muted-strong: #9aa8c0;
+  --line: rgba(120, 145, 190, 0.09);
+  --line-strong: rgba(120, 145, 190, 0.15);
+  --blue: #3b7cf5;
+  --blue-muted: #5a94ff;
+  --green: #22c55e;
+  --amber: #f59e0b;
+  --red: #ef4444;
+  --coral: #f87171;
+  --panel-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --font-display: "Bahnschrift", "DM Sans", "Arial Narrow", "Segoe UI", system-ui, sans-serif;
+  --font-plex-mono: "JetBrains Mono", "Fira Code", "Consolas", "Lucida Console", monospace;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-full: 9999px;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-display);
+  --font-mono: var(--font-plex-mono);
+}
+
+* { box-sizing: border-box; }
+
+html {
+  background: #040608;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-display), sans-serif;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a { color: inherit; text-decoration: none; }
+button, input, select, textarea { font: inherit; }
+
+::selection {
+  background: rgba(59, 124, 245, 0.3);
+  color: var(--foreground);
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(120, 145, 190, 0.12);
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(120, 145, 190, 0.25);
+}
+
+/* === Panel === */
+.app-panel {
+  background: linear-gradient(170deg, rgba(13, 16, 26, 0.95), rgba(8, 10, 18, 0.98));
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--panel-shadow);
+  backdrop-filter: blur(8px);
+}
+
+/* === Mono === */
+.mono {
+  font-family: var(--font-plex-mono), monospace;
+  letter-spacing: 0.04em;
+}
+
+/* === Shell === */
+.shell-background {
+  background:
+    radial-gradient(ellipse at 15% 5%, rgba(59, 124, 245, 0.06), transparent 40%),
+    radial-gradient(ellipse at 85% 95%, rgba(239, 68, 68, 0.03), transparent 35%),
+    linear-gradient(180deg, #060810 0%, #040608 100%);
+}
+
+/* === Inputs === */
+.fowas-input {
+  border: 1px solid var(--line);
+  background: rgba(6, 8, 14, 0.85);
+  color: var(--foreground);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.fowas-input:focus {
+  border-color: rgba(59, 124, 245, 0.4);
+  box-shadow: 0 0 0 3px rgba(59, 124, 245, 0.08);
+}
+.fowas-input::placeholder { color: rgba(107, 122, 150, 0.5); }
+.fowas-input:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* === Primary button === */
+.fowas-button {
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(59, 124, 245, 0.2);
+  background: linear-gradient(135deg, #3b7cf5, #2563eb);
+  color: #fff;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+.fowas-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(59, 124, 245, 0.2);
+}
+.fowas-button:active { transform: translateY(0); }
+.fowas-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* === Secondary button === */
+.fowas-button-secondary {
+  border: 1px solid var(--line-strong);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--foreground);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.fowas-button-secondary:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* === Chip === */
+.chip {
+  border: 1px solid var(--line-strong);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--muted-strong);
+  border-radius: var(--radius-full);
+  padding: 6px 14px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.chip:hover { background: rgba(255, 255, 255, 0.04); }
+
+/* === Badge === */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  background: currentColor;
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* === Node indicator (for graph-like UI) === */
+.node-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  box-shadow: 0 0 8px currentColor;
+}
+
+/* === Glow === */
+.glow-blue {
+  box-shadow: 0 0 16px rgba(59, 124, 245, 0.12);
+}
+
+/* === Skeleton === */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, rgba(255,255,255,0.02) 25%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0.02) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2s ease infinite;
+  border-radius: var(--radius-md);
+}
+
+/* === Fade in === */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-in {
+  animation: fadeIn 0.3s ease forwards;
+}
+
+/* === Pulse dot (for live indicators) === */
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.pulse-dot {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
