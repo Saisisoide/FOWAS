@@ -47,7 +47,7 @@ function FieldHint({
       <span
         id={tooltipId}
         role="tooltip"
-        className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 hidden w-72 -translate-x-1/2 rounded-[var(--radius-lg)] border border-white/10 bg-[#121926]/95 p-3.5 text-left text-[12px] normal-case tracking-normal text-slate-200 shadow-[0_16px_40px_rgba(0,0,0,0.4)] backdrop-blur-sm group-hover:block group-focus-within:block"
+        className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 hidden w-72 -translate-x-1/2 rounded-[var(--radius-lg)] border border-white/[0.08] bg-[#0a0e18]/95 p-3.5 text-left text-[12px] normal-case tracking-normal text-slate-200 shadow-[0_16px_40px_rgba(0,0,0,0.5)] backdrop-blur-sm group-hover:block group-focus-within:block"
       >
         <span className="mono text-[10px] uppercase tracking-widest text-[var(--blue-muted)]">
           {title}
@@ -175,7 +175,7 @@ export function LogIncidentModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-      <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-[var(--radius-xl)] border border-white/10 bg-[#0f141d] p-6 shadow-[0_32px_70px_rgba(0,0,0,0.45)]">
+      <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-[var(--radius-xl)] border border-white/[0.08] bg-[#0a0d16] p-6 shadow-[0_32px_70px_rgba(0,0,0,0.6)]">
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
             <p className="mono text-[11px] uppercase tracking-widest text-[var(--blue-muted)]">

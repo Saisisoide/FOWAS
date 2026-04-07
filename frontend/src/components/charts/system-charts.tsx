@@ -70,7 +70,7 @@ export function DonutChart({
           background: `conic-gradient(${gradient.join(", ")})`,
         }}
       >
-        <div className="absolute inset-[12px] rounded-full bg-[#111722]" />
+        <div className="absolute inset-[12px] rounded-full bg-[#0d1019]" />
         <div className="relative z-10 text-center">
           <div className="mono text-3xl font-semibold tabular-nums text-white">{valueLabel}</div>
         </div>

@@ -17,41 +17,36 @@ export default function LoginPage() {
     event.preventDefault();
     setError(null);
     setSubmitting(true);
-
     try {
       await login(email, password);
       router.replace("/dashboard");
     } catch (submissionError) {
-      setError(
-        submissionError instanceof Error ? submissionError.message : "Unable to sign in",
-      );
+      setError(submissionError instanceof Error ? submissionError.message : "Unable to sign in");
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <div className="w-full max-w-[480px] rounded-[var(--radius-xl)] border border-white/8 bg-[#101621] p-8 shadow-[0_24px_60px_rgba(0,0,0,0.4)] md:p-10">
+    <div className="w-full max-w-[440px] rounded-[var(--radius-xl)] border border-white/[0.06] bg-[#0a0d16] p-8 shadow-[0_20px_50px_rgba(0,0,0,0.5)] md:p-10">
       <div className="mb-8">
-        <p className="mono text-[11px] uppercase tracking-widest text-[var(--blue-muted)]">
+        <p className="mono text-[10px] uppercase tracking-[0.2em] text-[var(--blue)]">
           Operator Login
         </p>
-        <h1 className="mt-3 text-2xl font-bold tracking-tight text-white">
+        <h1 className="mt-3 text-xl font-bold tracking-tight text-white">
           Welcome to FOWAS
         </h1>
-        <p className="mt-2 text-[13px] leading-relaxed text-slate-400">
-          Sign in to review incidents, manage workflows, and monitor reliability metrics.
+        <p className="mt-2 text-[13px] leading-relaxed text-slate-500">
+          Sign in to review incidents, manage workflows, and monitor reliability.
         </p>
       </div>
 
       <form className="space-y-5" onSubmit={handleSubmit}>
         <div className="space-y-2">
-          <label className="text-xs font-medium text-slate-400">
-            Email
-          </label>
+          <label className="text-[11px] font-medium text-slate-500">Email</label>
           <input
             value={email}
-            onChange={(event) => setEmail(event.target.value)}
+            onChange={(e) => setEmail(e.target.value)}
             type="email"
             className="fowas-input w-full"
             placeholder="operator@fowas.dev"
@@ -59,12 +54,10 @@ export default function LoginPage() {
           />
         </div>
         <div className="space-y-2">
-          <label className="text-xs font-medium text-slate-400">
-            Password
-          </label>
+          <label className="text-[11px] font-medium text-slate-500">Password</label>
           <input
             value={password}
-            onChange={(event) => setPassword(event.target.value)}
+            onChange={(e) => setPassword(e.target.value)}
             type="password"
             className="fowas-input w-full"
             placeholder="••••••••"
@@ -73,7 +66,7 @@ export default function LoginPage() {
         </div>
 
         {error ? (
-          <div className="rounded-[var(--radius-md)] border border-red-500/20 bg-red-500/8 px-4 py-3 text-sm text-red-300">
+          <div className="rounded-lg border border-red-500/15 bg-red-500/[0.04] px-4 py-3 text-[12px] text-red-400">
             {error}
           </div>
         ) : null}
@@ -83,9 +76,9 @@ export default function LoginPage() {
         </button>
       </form>
 
-      <p className="mt-6 text-sm text-slate-500">
+      <p className="mt-6 text-[13px] text-slate-600">
         New operator?{" "}
-        <Link href="/register" className="font-medium text-[var(--blue-muted)] hover:text-white transition-colors">
+        <Link href="/register" className="font-medium text-[var(--blue)] hover:text-white transition-colors">
           Create an account
         </Link>
       </p>

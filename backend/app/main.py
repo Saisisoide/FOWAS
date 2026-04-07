@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
@@ -6,9 +7,14 @@ from app.models import User, Organisation, OrganisationMembership, Workflow, Inc
 from app.routes import auth, organisations, workflows, incidents, analytics
 
 app = FastAPI(title="FOWAS API", version="1.0.0")
+
+
 @app.on_event("startup")
 def on_startup():
-    Base.metadata.create_all(bind=engine)
+    # Use Alembic migrations in production: set RUN_MIGRATIONS=alembic
+    # Default: create_all for dev/simple deployments
+    if os.getenv("RUN_MIGRATIONS", "create_all") != "alembic":
+        Base.metadata.create_all(bind=engine)
 
 allowed_origins = [
     origin.strip()

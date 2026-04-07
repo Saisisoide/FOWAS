@@ -13,8 +13,9 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background">
-      <div className="mono text-sm uppercase tracking-[0.35em] text-slate-500">
-        Initialising Failure Oriented Workflow analysis System
+      <div className="flex flex-col items-center gap-3">
+        <div className="skeleton h-1.5 w-32 rounded-full" />
+        <p className="text-xs text-slate-500">Initializing…</p>
       </div>
     </main>
   );

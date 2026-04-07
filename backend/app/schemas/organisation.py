@@ -29,3 +29,10 @@ class MembershipOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+class MemberDetailOut(BaseModel):
+    user_id: UUID
+    email: str
+    full_name: str
+    role: RoleEnum
+    joined_at: datetime

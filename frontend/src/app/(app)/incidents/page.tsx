@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { LogIncidentModal } from "@/components/incidents/log-incident-modal";
 import { Panel } from "@/components/ui/panel";
@@ -131,7 +132,17 @@ export default function IncidentsPage() {
                   <td className="mono px-4 py-3.5 text-xs text-slate-600">
                     {String(index + 1).padStart(3, "0")}
                   </td>
-                  <td className="px-4 py-3.5 text-sm font-medium text-white">{incident.title}</td>
+                  <td className="px-4 py-3.5">
+                    <Link
+                      href={`/incidents/${incident.id}`}
+                      className="text-sm font-medium text-white hover:text-[var(--blue)] transition-colors"
+                    >
+                      {incident.title}
+                      {incident.notes && incident.notes.trim() ? (
+                        <span className="ml-1.5 text-[10px] text-slate-500" title="Has reflection notes">✎</span>
+                      ) : null}
+                    </Link>
+                  </td>
                   <td className="px-4 py-3.5">
                     <span className="badge" style={{ color: severityColors[incident.severity] }}>
                       {incident.severity}

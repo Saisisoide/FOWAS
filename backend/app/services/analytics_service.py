@@ -1,17 +1,43 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import func
 from datetime import datetime, timedelta
-from app.models.incident import Incident, StatusEnum
-from app.models.workflow import Workflow
+from typing import Optional
+from uuid import UUID
+from app.models.incident import Incident, StatusEnum, SeverityEnum
 from app.models.user import User
 from app.utils.risk_engine import compute_risk
 from app.utils.reliability_metrics import compute_metrics
 from app.services.incident_service import apply_visibility_filter
 
-def get_summary(db: Session, user: User, workflow_id=None):
-    query = apply_visibility_filter(db, user, db.query(Incident))
+
+def _apply_analytics_filters(
+    query,
+    workflow_id: Optional[UUID] = None,
+    severity: Optional[SeverityEnum] = None,
+    date_from: Optional[datetime] = None,
+    date_to: Optional[datetime] = None,
+):
+    """Shared filter logic for all analytics endpoints."""
     if workflow_id:
         query = query.filter(Incident.workflow_id == workflow_id)
+    if severity:
+        query = query.filter(Incident.severity == severity)
+    if date_from:
+        query = query.filter(Incident.created_at >= date_from)
+    if date_to:
+        query = query.filter(Incident.created_at <= date_to)
+    return query
+
+
+def get_summary(
+    db: Session,
+    user: User,
+    workflow_id: Optional[UUID] = None,
+    severity: Optional[SeverityEnum] = None,
+    date_from: Optional[datetime] = None,
+    date_to: Optional[datetime] = None,
+):
+    query = apply_visibility_filter(db, user, db.query(Incident))
+    query = _apply_analytics_filters(query, workflow_id, severity, date_from, date_to)
 
     incidents = query.all()
     incident_dicts = [
@@ -35,10 +61,20 @@ def get_summary(db: Session, user: User, workflow_id=None):
         "availability_ratio": metrics.availability_ratio,
     }
 
-def get_trend(db: Session, user: User, days: int = 30):
+
+def get_trend(
+    db: Session,
+    user: User,
+    days: int = 30,
+    workflow_id: Optional[UUID] = None,
+    severity: Optional[SeverityEnum] = None,
+):
     query = apply_visibility_filter(db, user, db.query(Incident))
     since = datetime.utcnow() - timedelta(days=days)
-    incidents = query.filter(Incident.created_at >= since).all()
+    query = query.filter(Incident.created_at >= since)
+    query = _apply_analytics_filters(query, workflow_id, severity)
+
+    incidents = query.all()
 
     counts = {}
     for i in incidents:
@@ -47,16 +83,35 @@ def get_trend(db: Session, user: User, days: int = 30):
 
     return [{"date": k, "count": v} for k, v in sorted(counts.items())]
 
-def get_severity_breakdown(db: Session, user: User):
+
+def get_severity_breakdown(
+    db: Session,
+    user: User,
+    workflow_id: Optional[UUID] = None,
+    date_from: Optional[datetime] = None,
+    date_to: Optional[datetime] = None,
+):
     query = apply_visibility_filter(db, user, db.query(Incident))
+    query = _apply_analytics_filters(query, workflow_id, date_from=date_from, date_to=date_to)
+
     incidents = query.all()
     counts = {}
     for i in incidents:
         counts[i.severity.value] = counts.get(i.severity.value, 0) + 1
     return [{"severity": k, "count": v} for k, v in counts.items()]
 
-def get_risk_distribution(db: Session, user: User):
+
+def get_risk_distribution(
+    db: Session,
+    user: User,
+    workflow_id: Optional[UUID] = None,
+    severity: Optional[SeverityEnum] = None,
+    date_from: Optional[datetime] = None,
+    date_to: Optional[datetime] = None,
+):
     query = apply_visibility_filter(db, user, db.query(Incident))
+    query = _apply_analytics_filters(query, workflow_id, severity, date_from, date_to)
+
     incidents = query.all()
     buckets = {"LOW (1-5)": 0, "MODERATE (6-15)": 0, "HIGH (16-30)": 0}
     for i in incidents:
@@ -69,8 +124,17 @@ def get_risk_distribution(db: Session, user: User):
             buckets["HIGH (16-30)"] += 1
     return [{"range": k, "count": v} for k, v in buckets.items()]
 
-def get_workflow_risk(db: Session, user: User):
+
+def get_workflow_risk(
+    db: Session,
+    user: User,
+    severity: Optional[SeverityEnum] = None,
+    date_from: Optional[datetime] = None,
+    date_to: Optional[datetime] = None,
+):
     query = apply_visibility_filter(db, user, db.query(Incident))
+    query = _apply_analytics_filters(query, severity=severity, date_from=date_from, date_to=date_to)
+
     incidents = query.all()
 
     workflow_data = {}

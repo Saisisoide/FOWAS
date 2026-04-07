@@ -1,42 +1,49 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { DonutChart, BarChart, LineAreaChart, ProgressList } from "@/components/charts/system-charts";
 import { LogIncidentModal } from "@/components/incidents/log-incident-modal";
 import { Panel } from "@/components/ui/panel";
 import { useGlobalFilters } from "@/hooks/useGlobalFilters";
 import {
+  computeInsights,
   filterIncidents,
-  formatDate,
   formatMetric,
   formatPercent,
+  getAttentionQueue,
+  getHealthSummary,
   getRiskDistribution,
   getSeverityBreakdown,
   getSummaryMetrics,
   getTrendData,
   getWorkflowRisk,
-  severityOptions,
+  riskColors,
   severityColors,
   statusColors,
 } from "@/lib/fowas";
-import { getIncidents, getOrganisations, getWorkflows } from "@/services/api";
+import { getIncidents, getWorkflows, getAnalyticsSummary } from "@/services/api";
 import { exportIncidentsCSV, exportDashboardPDF } from "@/lib/export";
-import type { DashboardFilters, Incident, Organisation, Workflow } from "@/types";
+import type { AnalyticsSummary, Incident, Workflow } from "@/types";
 
 function StatCard({
   label,
   value,
   detail,
+  accent,
 }: {
   label: string;
   value: string;
   detail: string;
+  accent?: string;
 }) {
   return (
-    <div className="rounded-[var(--radius-lg)] border border-white/8 bg-white/[0.025] p-5">
-      <p className="text-xs font-medium text-slate-500">{label}</p>
-      <p className="mt-2.5 text-3xl font-semibold tabular-nums text-white">{value}</p>
-      <p className="mt-1.5 text-[13px] text-slate-500">{detail}</p>
+    <div className="rounded-[var(--radius-lg)] border border-white/[0.06] bg-white/[0.02] p-5">
+      <p className="mono text-[10px] uppercase tracking-[0.14em] text-slate-600">{label}</p>
+      <p className="mt-2 text-3xl font-semibold tabular-nums" style={{ color: accent ?? "#fff" }}>
+        {value}
+      </p>
+      <p className="mt-1.5 text-[12px] text-slate-600">{detail}</p>
     </div>
   );
 }
@@ -44,17 +51,17 @@ function StatCard({
 function LoadingPlaceholder({ label }: { label: string }) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 py-12">
-      <div className="skeleton h-1.5 w-24 rounded-full" />
-      <p className="text-xs text-slate-600">{label}</p>
+      <div className="skeleton h-1.5 w-20 rounded-full" />
+      <p className="text-[11px] text-slate-700">{label}</p>
     </div>
   );
 }
 
 export default function DashboardPage() {
-  const { filters, setFilters, setWorkflows: setGlobalWorkflows } = useGlobalFilters();
+  const { filters, setWorkflows: setGlobalWorkflows } = useGlobalFilters();
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
-  const [organisations, setOrganisations] = useState<Organisation[]>([]);
+  const [serverSummary, setServerSummary] = useState<AnalyticsSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -63,111 +70,68 @@ export default function DashboardPage() {
     async function loadData() {
       setLoading(true);
       setError(null);
-
       try {
-        const [incidentData, workflowData, organisationData] = await Promise.all([
+        const [incidentData, workflowData, summaryData] = await Promise.all([
           getIncidents(),
           getWorkflows(),
-          getOrganisations(),
+          getAnalyticsSummary(),
         ]);
-
         setIncidents(incidentData);
         setWorkflows(workflowData);
         setGlobalWorkflows(workflowData);
-        setOrganisations(organisationData);
+        setServerSummary(summaryData);
       } catch (loadError) {
         setError(loadError instanceof Error ? loadError.message : "Unable to load dashboard");
       } finally {
         setLoading(false);
       }
     }
-
     void loadData();
   }, [setGlobalWorkflows]);
 
+  // Client-side filtered data for charts and insights
   const filteredIncidents = filterIncidents(incidents, filters);
-  const summary = getSummaryMetrics(filteredIncidents);
+  const clientSummary = getSummaryMetrics(filteredIncidents);
   const severityBreakdown = getSeverityBreakdown(filteredIncidents);
   const riskDistribution = getRiskDistribution(filteredIncidents);
-  const workflowRisk = getWorkflowRisk(filteredIncidents, workflows).slice(0, 3);
+  const workflowRisk = getWorkflowRisk(filteredIncidents, workflows).slice(0, 4);
   const trend = getTrendData(filteredIncidents, filters.dateRange);
-  const recentIncidents = [...filteredIncidents]
-    .sort((left, right) => new Date(right.created_at).getTime() - new Date(left.created_at).getTime())
-    .slice(0, 5);
+  const insights = computeInsights(filteredIncidents, workflows, clientSummary);
+  const healthSummary = getHealthSummary(filteredIncidents, clientSummary);
+  const attentionQueue = getAttentionQueue(filteredIncidents, clientSummary.mttrHours).slice(0, 6);
+
+  // Use server summary for KPIs when no filters are active, fall back to client
+  const hasActiveFilters = filters.severities.length > 0 || filters.workflowIds.length > 0 || filters.search.trim() !== "";
+  const summary = hasActiveFilters ? clientSummary : {
+    total: serverSummary?.total_incidents ?? clientSummary.total,
+    highRisk: serverSummary?.high_risk_count ?? clientSummary.highRisk,
+    resolved: serverSummary?.resolved_count ?? clientSummary.resolved,
+    mttrHours: serverSummary?.mttr_hours ?? clientSummary.mttrHours,
+    mtbfHours: serverSummary?.mtbf_hours ?? clientSummary.mtbfHours,
+    availabilityRatio: serverSummary?.availability_ratio ?? clientSummary.availabilityRatio,
+    open: serverSummary?.open_incidents ?? clientSummary.open,
+  };
 
   return (
     <div className="space-y-6">
-      {/* KPI Cards */}
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          label="Total Incidents"
-          value={String(summary.total)}
-          detail="Current filter scope"
-        />
-        <StatCard
-          label="High Risk"
-          value={String(summary.highRisk)}
-          detail="Risk score above 15"
-        />
-        <StatCard
-          label="Resolved"
-          value={String(summary.resolved)}
-          detail={`Availability ${formatPercent(summary.availabilityRatio)}`}
-        />
-        <StatCard
-          label="MTTR (hrs)"
-          value={formatMetric(summary.mttrHours)}
-          detail={`MTBF ${formatMetric(summary.mtbfHours)} hrs`}
-        />
-      </section>
-
-      {/* Filter bar */}
-      <section className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-2">
-          {[7, 14, 30, 90].map((range) => (
-            <button
-              key={range}
-              type="button"
-              onClick={() =>
-                setFilters((current) => ({
-                  ...current,
-                  dateRange: range as DashboardFilters["dateRange"],
-                }))
-              }
-              className={`chip text-xs ${
-                filters.dateRange === range ? "border-[var(--blue)] text-white bg-[var(--blue)]/8" : ""
-              }`}
-            >
-              {range}d
-            </button>
-          ))}
+      {/* Header */}
+      <section className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+        <div className="space-y-1.5">
+          <h1 className="text-xl font-bold tracking-tight text-white">
+            Reliability Overview
+          </h1>
+          {!loading && (
+            <p className="max-w-2xl text-[13px] leading-relaxed text-slate-500">
+              {healthSummary}
+            </p>
+          )}
         </div>
-        <div className="flex flex-wrap gap-2">
-          {severityOptions.map((severity) => (
-            <button
-              key={severity}
-              type="button"
-              onClick={() =>
-                setFilters((current) => ({
-                  ...current,
-                  severities: current.severities.includes(severity)
-                    ? current.severities.filter((item) => item !== severity)
-                    : [...current.severities, severity],
-                }))
-              }
-              className={`chip text-xs ${
-                filters.severities.includes(severity) ? "border-[var(--blue)] text-white bg-[var(--blue)]/8" : ""
-              }`}
-            >
-              {severity}
-            </button>
-          ))}
-          <span className="mx-0.5 self-center text-white/10">|</span>
+        <div className="flex shrink-0 gap-2">
           <button
             type="button"
             onClick={() => exportIncidentsCSV(filteredIncidents, workflows)}
             disabled={loading || filteredIncidents.length === 0}
-            className="chip text-xs transition hover:border-[var(--green)] hover:text-[var(--green)] disabled:opacity-30 disabled:cursor-not-allowed"
+            className="chip text-[11px] transition hover:border-[var(--green)]/40 hover:text-[var(--green)] disabled:opacity-25"
           >
             Export CSV
           </button>
@@ -175,83 +139,118 @@ export default function DashboardPage() {
             type="button"
             onClick={() => exportDashboardPDF(filteredIncidents, workflows)}
             disabled={loading || filteredIncidents.length === 0}
-            className="chip text-xs transition hover:border-[var(--blue)] hover:text-[var(--blue)] disabled:opacity-30 disabled:cursor-not-allowed"
+            className="chip text-[11px] transition hover:border-[var(--blue)]/40 hover:text-[var(--blue)] disabled:opacity-25"
           >
             Export PDF
           </button>
         </div>
       </section>
 
+      {/* KPI Cards — driven by backend analytics */}
+      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          label="Total Incidents"
+          value={String(summary.total)}
+          detail={hasActiveFilters ? "Filtered scope" : "Server-computed"}
+        />
+        <StatCard
+          label="High Risk"
+          value={String(summary.highRisk)}
+          detail="Score > 15"
+          accent={summary.highRisk > 0 ? "var(--coral)" : undefined}
+        />
+        <StatCard
+          label="Resolved"
+          value={String(summary.resolved)}
+          detail={`Availability ${formatPercent(summary.availabilityRatio)}`}
+          accent={summary.resolved > 0 ? "var(--green)" : undefined}
+        />
+        <StatCard
+          label="MTTR"
+          value={`${formatMetric(summary.mttrHours)}h`}
+          detail={`MTBF ${formatMetric(summary.mtbfHours)}h`}
+        />
+      </section>
+
+      {/* Insights */}
+      {!loading && insights.length > 0 && (
+        <section className="space-y-1.5">
+          {insights.map((insight, i) => (
+            <div
+              key={i}
+              className={`rounded-lg border px-4 py-2.5 text-[12px] leading-relaxed ${
+                insight.type === "warning"
+                  ? "border-[var(--amber)]/15 bg-[var(--amber)]/[0.03] text-amber-300/80"
+                  : insight.type === "positive"
+                    ? "border-[var(--green)]/15 bg-[var(--green)]/[0.03] text-green-300/80"
+                    : "border-white/[0.06] bg-white/[0.01] text-slate-500"
+              }`}
+            >
+              {insight.type === "warning" ? "⚠ " : insight.type === "positive" ? "✓ " : "ℹ "}
+              {insight.message}
+            </div>
+          ))}
+        </section>
+      )}
+
       {error ? (
         <Panel>
-          <p className="text-sm text-red-300">{error}</p>
+          <p className="text-sm text-red-400">{error}</p>
         </Panel>
       ) : null}
 
-      {/* Charts row */}
-      <section className="grid gap-6 xl:grid-cols-[1.6fr_0.75fr_0.75fr]">
-        <Panel title="Risk Distribution" eyebrow="Global Filters" className="min-h-[340px]">
+      {/* Charts */}
+      <section className="grid gap-5 xl:grid-cols-[1.6fr_0.75fr_0.75fr]">
+        <Panel title="Risk Distribution" className="min-h-[320px]">
+          {loading ? <LoadingPlaceholder label="Loading…" /> : <BarChart data={riskDistribution} />}
+        </Panel>
+        <Panel title="Severity Mix" className="min-h-[320px]">
           {loading ? (
-            <LoadingPlaceholder label="Loading histogram…" />
+            <LoadingPlaceholder label="Loading…" />
           ) : (
-            <BarChart data={riskDistribution} />
+            <DonutChart data={severityBreakdown} valueLabel={`${summary.total || 0}`} />
           )}
         </Panel>
-
-        <Panel title="Severity Mix" className="min-h-[340px]">
-          {loading ? (
-            <LoadingPlaceholder label="Loading severity…" />
-          ) : (
-            <DonutChart
-              data={severityBreakdown}
-              valueLabel={`${summary.total || 0}`}
-            />
-          )}
-        </Panel>
-
-        <Panel title="Workflow Exposure" className="min-h-[340px]">
-          {loading ? (
-            <LoadingPlaceholder label="Loading workflows…" />
-          ) : (
-            <ProgressList data={workflowRisk} maxValue={30} />
-          )}
+        <Panel title="Workflow Risk" className="min-h-[320px]">
+          {loading ? <LoadingPlaceholder label="Loading…" /> : <ProgressList data={workflowRisk} maxValue={30} />}
         </Panel>
       </section>
 
-      {/* Trend chart */}
+      {/* Trend */}
       <Panel
-        title={`Incident Trend (${filters.dateRange}d)`}
+        title={`Trend (${filters.dateRange}d)`}
         right={
-          <div className="flex items-center gap-5">
-            <span className="flex items-center gap-2 text-xs text-slate-400">
-              <span className="inline-block h-2 w-2 rounded-full bg-[var(--blue)]" />
+          <div className="flex items-center gap-4">
+            <span className="flex items-center gap-1.5 text-[11px] text-slate-500">
+              <span className="node-dot" style={{ background: "var(--blue)", color: "var(--blue)" }} />
               Active
             </span>
-            <span className="flex items-center gap-2 text-xs text-slate-500">
-              <span className="inline-block h-2 w-2 rounded-full bg-slate-500" />
+            <span className="flex items-center gap-1.5 text-[11px] text-slate-600">
+              <span className="node-dot" style={{ background: "#475569", color: "#475569" }} />
               Resolved
             </span>
           </div>
         }
       >
         {loading ? (
-          <LoadingPlaceholder label="Loading trend…" />
+          <LoadingPlaceholder label="Loading…" />
         ) : (
           <LineAreaChart
             data={trend}
             lines={[
-              { key: "active", color: "#4484ff" },
-              { key: "resolved", color: "#8aa6d9", dashed: true },
+              { key: "active", color: "#3b7cf5" },
+              { key: "resolved", color: "#64748b", dashed: true },
             ]}
           />
         )}
       </Panel>
 
-      {/* Recent Incidents table */}
+      {/* Attention Queue */}
       <Panel
-        title="Recent Incidents"
+        title="Requires Attention"
+        eyebrow="Priority Queue"
         right={
-          <button type="button" onClick={() => setModalOpen(true)} className="fowas-button px-4 py-2.5 text-[13px]">
+          <button type="button" onClick={() => setModalOpen(true)} className="fowas-button px-4 py-2 text-[12px]">
             Log Incident
           </button>
         }
@@ -259,33 +258,54 @@ export default function DashboardPage() {
         <div className="overflow-x-auto">
           <table className="min-w-full">
             <thead>
-              <tr className="border-b border-white/8 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
-                <th className="px-4 pb-3">Title</th>
-                <th className="px-4 pb-3">Workflow</th>
-                <th className="px-4 pb-3">Severity</th>
-                <th className="px-4 pb-3">Status</th>
-                <th className="px-4 pb-3">Created</th>
+              <tr className="border-b border-white/[0.06] text-left text-[10px] font-medium uppercase tracking-wider text-slate-600">
+                <th className="px-4 pb-2.5">Title</th>
+                <th className="px-4 pb-2.5">Workflow</th>
+                <th className="px-4 pb-2.5">Risk</th>
+                <th className="px-4 pb-2.5">Severity</th>
+                <th className="px-4 pb-2.5">Status</th>
+                <th className="px-4 pb-2.5">Open</th>
               </tr>
             </thead>
             <tbody>
-              {recentIncidents.map((incident) => (
-                <tr key={incident.id} className="border-b border-white/[0.04] transition hover:bg-white/[0.02]">
-                  <td className="px-4 py-3.5 text-sm text-white">{incident.title}</td>
-                  <td className="px-4 py-3.5 text-sm text-slate-400">
-                    {workflows.find((workflow) => workflow.id === incident.workflow_id)?.name ?? "—"}
+              {attentionQueue.map((incident) => (
+                <tr key={incident.id} className="border-b border-white/[0.03] transition hover:bg-white/[0.015]">
+                  <td className="px-4 py-3">
+                    <Link
+                      href={`/incidents/${incident.id}`}
+                      className="text-[13px] font-medium text-white hover:text-[var(--blue)] transition-colors"
+                    >
+                      {incident.title}
+                      {incident._overdue ? (
+                        <span className="ml-1.5 text-[9px] font-semibold text-[var(--red)] pulse-dot">OVERDUE</span>
+                      ) : null}
+                    </Link>
                   </td>
-                  <td className="px-4 py-3.5">
+                  <td className="px-4 py-3 text-[12px] text-slate-500">
+                    {workflows.find((w) => w.id === incident.workflow_id)?.name ?? "—"}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className="mono text-[13px] font-semibold tabular-nums"
+                      style={{ color: riskColors[incident.risk_level ?? "LOW"] }}
+                    >
+                      {incident.risk_score ?? "—"}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
                     <span className="badge" style={{ color: severityColors[incident.severity] }}>
                       {incident.severity}
                     </span>
                   </td>
-                  <td className="px-4 py-3.5">
+                  <td className="px-4 py-3">
                     <span className="badge" style={{ color: statusColors[incident.status] }}>
                       {incident.status}
                     </span>
                   </td>
-                  <td className="px-4 py-3.5 text-sm text-slate-500">
-                    {formatDate(incident.created_at)}
+                  <td className={`px-4 py-3 mono text-[11px] tabular-nums ${
+                    incident._overdue ? "text-[var(--red)]" : "text-slate-600"
+                  }`}>
+                    {incident._hoursOpen.toFixed(1)}h
                   </td>
                 </tr>
               ))}
@@ -293,63 +313,12 @@ export default function DashboardPage() {
           </table>
         </div>
 
-        {!loading && recentIncidents.length === 0 ? (
+        {!loading && attentionQueue.length === 0 ? (
           <div className="py-10 text-center">
-            <p className="text-sm text-slate-500">
-              No incidents match the active filters.
-            </p>
-            <p className="mt-1 text-xs text-slate-600">
-              Create your first incident to populate the dashboard.
-            </p>
+            <p className="text-[13px] text-slate-600">All clear — no unresolved incidents.</p>
           </div>
         ) : null}
       </Panel>
-
-      {/* Workspace summary */}
-      <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <Panel title="Workspace Status">
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-[var(--radius-lg)] border border-white/8 bg-white/[0.03] p-4">
-              <p className="text-xs font-medium text-slate-500">Organizations</p>
-              <p className="mt-2 text-2xl font-semibold text-white">{organisations.length}</p>
-            </div>
-            <div className="rounded-[var(--radius-lg)] border border-white/8 bg-white/[0.03] p-4">
-              <p className="text-xs font-medium text-slate-500">Workflows</p>
-              <p className="mt-2 text-2xl font-semibold text-white">{workflows.length}</p>
-            </div>
-            <div className="rounded-[var(--radius-lg)] border border-white/8 bg-white/[0.03] p-4">
-              <p className="text-xs font-medium text-slate-500">Filter Range</p>
-              <p className="mt-2 text-2xl font-semibold text-white">{filters.dateRange}d</p>
-            </div>
-          </div>
-        </Panel>
-
-        <Panel title="Signal Mix">
-          <div className="space-y-4">
-            {severityBreakdown.map((item) => (
-              <div key={item.label} className="space-y-2">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-xs font-medium" style={{ color: item.color }}>
-                    {item.label}
-                  </span>
-                  <span className="mono text-xs text-slate-500">
-                    {item.value}
-                  </span>
-                </div>
-                <div className="h-1.5 rounded-full bg-white/[0.05]">
-                  <div
-                    className="h-full rounded-full transition-all duration-500"
-                    style={{
-                      width: `${summary.total === 0 ? 0 : (item.value / summary.total) * 100}%`,
-                      background: item.color,
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </Panel>
-      </section>
 
       <LogIncidentModal
         open={modalOpen}

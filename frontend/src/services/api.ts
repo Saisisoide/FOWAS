@@ -119,7 +119,39 @@ export async function getCurrentUser() {
 }
 
 export async function getIncidents() {
-  return request<Incident[]>("/incidents");
+  // Backend now returns {items, total, skip, limit}. Unwrap for backward compat.
+  const response = await request<{ items: Incident[]; total: number; skip: number; limit: number }>("/incidents?limit=500");
+  return response.items;
+}
+
+export async function getIncidentsPaginated(params?: {
+  severity?: string;
+  status?: string;
+  workflow_id?: string;
+  main_category?: string;
+  search?: string;
+  tag?: string;
+  date_from?: string;
+  date_to?: string;
+  skip?: number;
+  limit?: number;
+}) {
+  const searchParams = new URLSearchParams();
+  if (params) {
+    for (const [key, value] of Object.entries(params)) {
+      if (value !== undefined && value !== null && value !== "") {
+        searchParams.set(key, String(value));
+      }
+    }
+  }
+  const qs = searchParams.toString();
+  return request<{ items: Incident[]; total: number; skip: number; limit: number }>(
+    `/incidents${qs ? `?${qs}` : ""}`,
+  );
+}
+
+export async function getIncident(id: string) {
+  return request<Incident>(`/incidents/${id}`);
 }
 
 export async function createIncident(input: IncidentCreateInput) {
@@ -176,4 +208,83 @@ export async function createOrganisation(input: OrganisationCreateInput) {
 
 export async function getAnalyticsSummary() {
   return request<AnalyticsSummary>("/analytics/summary");
+}
+
+// ------------------------------------------------------------------ //
+//  Workflow management                                                //
+// ------------------------------------------------------------------ //
+
+export async function updateWorkflow(
+  workflowId: string,
+  input: { name?: string; description?: string; visibility?: string },
+) {
+  return request<Workflow>(
+    `/workflows/${workflowId}`,
+    { method: "PATCH", body: JSON.stringify(input) },
+    { hasBody: true },
+  );
+}
+
+export async function deleteWorkflow(workflowId: string) {
+  return request<{ detail: string }>(
+    `/workflows/${workflowId}`,
+    { method: "DELETE" },
+  );
+}
+
+// ------------------------------------------------------------------ //
+//  Incident delete                                                    //
+// ------------------------------------------------------------------ //
+
+export async function deleteIncident(incidentId: string) {
+  return request<{ detail: string }>(
+    `/incidents/${incidentId}`,
+    { method: "DELETE" },
+  );
+}
+
+// ------------------------------------------------------------------ //
+//  Organisation member management                                     //
+// ------------------------------------------------------------------ //
+
+export interface OrgMember {
+  user_id: string;
+  email: string;
+  full_name: string;
+  role: string;
+  joined_at: string;
+}
+
+export async function getOrgMembers(orgId: string) {
+  return request<OrgMember[]>(`/organisations/${orgId}/members`);
+}
+
+export async function inviteOrgMember(orgId: string, email: string, role: string = "MEMBER") {
+  return request<{ detail: string }>(
+    `/organisations/${orgId}/invite`,
+    { method: "POST", body: JSON.stringify({ email, role }) },
+    { hasBody: true },
+  );
+}
+
+export async function updateMemberRole(orgId: string, userId: string, role: string) {
+  return request<{ detail: string }>(
+    `/organisations/${orgId}/members/${userId}`,
+    { method: "PATCH", body: JSON.stringify({ role }) },
+    { hasBody: true },
+  );
+}
+
+export async function removeMember(orgId: string, userId: string) {
+  return request<{ detail: string }>(
+    `/organisations/${orgId}/members/${userId}`,
+    { method: "DELETE" },
+  );
+}
+
+export async function deleteOrganisation(orgId: string) {
+  return request<{ detail: string }>(
+    `/organisations/${orgId}`,
+    { method: "DELETE" },
+  );
 }

@@ -18,54 +18,46 @@ export default function RegisterPage() {
     event.preventDefault();
     setError(null);
     setSubmitting(true);
-
     try {
       await register(fullName, email, password);
       router.replace("/dashboard");
     } catch (submissionError) {
-      setError(
-        submissionError instanceof Error ? submissionError.message : "Unable to create account",
-      );
+      setError(submissionError instanceof Error ? submissionError.message : "Unable to create account");
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <div className="w-full max-w-[480px] rounded-[var(--radius-xl)] border border-white/8 bg-[#101621] p-8 shadow-[0_24px_60px_rgba(0,0,0,0.4)] md:p-10">
+    <div className="w-full max-w-[440px] rounded-[var(--radius-xl)] border border-white/[0.06] bg-[#0a0d16] p-8 shadow-[0_20px_50px_rgba(0,0,0,0.5)] md:p-10">
       <div className="mb-8">
-        <p className="mono text-[11px] uppercase tracking-widest text-[var(--blue-muted)]">
+        <p className="mono text-[10px] uppercase tracking-[0.2em] text-[var(--blue)]">
           Create Account
         </p>
-        <h1 className="mt-3 text-2xl font-bold tracking-tight text-white">
+        <h1 className="mt-3 text-xl font-bold tracking-tight text-white">
           Set up your workspace
         </h1>
-        <p className="mt-2 text-[13px] leading-relaxed text-slate-400">
-          Register, then continue to the dashboard to create your
-          first organisation, workflow, and incident stream.
+        <p className="mt-2 text-[13px] leading-relaxed text-slate-500">
+          Register, then create your first organisation and workflow.
         </p>
       </div>
 
       <form className="space-y-5" onSubmit={handleSubmit}>
         <div className="space-y-2">
-          <label className="text-xs font-medium text-slate-400">
-            Full Name
-          </label>
+          <label className="text-[11px] font-medium text-slate-500">Full Name</label>
           <input
             value={fullName}
-            onChange={(event) => setFullName(event.target.value)}
+            onChange={(e) => setFullName(e.target.value)}
             className="fowas-input w-full"
             placeholder="Your name"
             required
           />
         </div>
         <div className="space-y-2">
-          <label className="text-xs font-medium text-slate-400">
-            Email
-          </label>
+          <label className="text-[11px] font-medium text-slate-500">Email</label>
           <input
             value={email}
-            onChange={(event) => setEmail(event.target.value)}
+            onChange={(e) => setEmail(e.target.value)}
             type="email"
             className="fowas-input w-full"
             placeholder="operator@fowas.dev"
@@ -73,12 +65,10 @@ export default function RegisterPage() {
           />
         </div>
         <div className="space-y-2">
-          <label className="text-xs font-medium text-slate-400">
-            Password
-          </label>
+          <label className="text-[11px] font-medium text-slate-500">Password</label>
           <input
             value={password}
-            onChange={(event) => setPassword(event.target.value)}
+            onChange={(e) => setPassword(e.target.value)}
             type="password"
             minLength={6}
             className="fowas-input w-full"
@@ -88,7 +78,7 @@ export default function RegisterPage() {
         </div>
 
         {error ? (
-          <div className="rounded-[var(--radius-md)] border border-red-500/20 bg-red-500/8 px-4 py-3 text-sm text-red-300">
+          <div className="rounded-lg border border-red-500/15 bg-red-500/[0.04] px-4 py-3 text-[12px] text-red-400">
             {error}
           </div>
         ) : null}
@@ -98,9 +88,9 @@ export default function RegisterPage() {
         </button>
       </form>
 
-      <p className="mt-6 text-sm text-slate-500">
+      <p className="mt-6 text-[13px] text-slate-600">
         Already registered?{" "}
-        <Link href="/login" className="font-medium text-[var(--blue-muted)] hover:text-white transition-colors">
+        <Link href="/login" className="font-medium text-[var(--blue)] hover:text-white transition-colors">
           Sign in
         </Link>
       </p>

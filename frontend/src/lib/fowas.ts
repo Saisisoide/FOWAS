@@ -334,3 +334,174 @@ export function initials(name: string) {
     .slice(0, 2)
     .toUpperCase();
 }
+
+/* ------------------------------------------------------------------ */
+/*  Insight Engine (rule-based)                                        */
+/* ------------------------------------------------------------------ */
+
+export interface Insight {
+  type: "warning" | "info" | "positive";
+  message: string;
+}
+
+export function computeInsights(
+  incidents: Incident[],
+  workflows: Workflow[],
+  summary: ReturnType<typeof getSummaryMetrics>,
+): Insight[] {
+  const insights: Insight[] = [];
+
+  // Rule 1: High severity dominance
+  const highCount = incidents.filter((i) => i.severity === "HIGH").length;
+  if (incidents.length >= 3 && highCount / incidents.length > 0.5) {
+    insights.push({
+      type: "warning",
+      message: `${Math.round((highCount / incidents.length) * 100)}% of incidents are HIGH severity. Review whether severity is being overclassified, or if systemic issues are accumulating.`,
+    });
+  }
+
+  // Rule 2: Overdue incidents (open longer than 2× MTTR)
+  const avgMttr = summary.mttrHours ?? 24;
+  const overdue = incidents.filter((i) => {
+    if (i.status === "RESOLVED") return false;
+    const hoursOpen =
+      (Date.now() - new Date(i.created_at).getTime()) / (1000 * 60 * 60);
+    return hoursOpen > avgMttr * 2;
+  });
+  if (overdue.length > 0) {
+    insights.push({
+      type: "warning",
+      message: `${overdue.length} incident${overdue.length > 1 ? "s" : ""} open longer than 2× average resolution time (${avgMttr.toFixed(1)}h). Oldest: "${overdue[0].title}".`,
+    });
+  }
+
+  // Rule 3: Recurring category (3+ incidents with same category+subcategory)
+  const categoryCounts = new Map<string, number>();
+  for (const inc of incidents) {
+    const key = `${inc.main_category} › ${inc.sub_category}`;
+    categoryCounts.set(key, (categoryCounts.get(key) ?? 0) + 1);
+  }
+  for (const [category, count] of categoryCounts) {
+    if (count >= 3) {
+      insights.push({
+        type: "warning",
+        message: `"${category}" appeared ${count} times. This pattern suggests a systemic issue — not isolated incidents.`,
+      });
+    }
+  }
+
+  // Rule 4: Workflow with high avg risk
+  const workflowRisks = workflows
+    .map((w) => {
+      const related = incidents.filter((i) => i.workflow_id === w.id);
+      const avg =
+        related.length === 0
+          ? 0
+          : related.reduce((s, i) => s + (i.risk_score ?? 0), 0) /
+            related.length;
+      return { name: w.name, avg, count: related.length };
+    })
+    .filter((w) => w.count >= 2);
+
+  const highestRisk = workflowRisks.sort((a, b) => b.avg - a.avg)[0];
+  if (highestRisk && highestRisk.avg > 15) {
+    insights.push({
+      type: "warning",
+      message: `"${highestRisk.name}" has an average risk score of ${highestRisk.avg.toFixed(0)} across ${highestRisk.count} incidents — above the HIGH threshold.`,
+    });
+  }
+
+  // Rule 5: Good resolution rate
+  if (summary.total >= 5 && summary.resolved / summary.total >= 0.7) {
+    insights.push({
+      type: "positive",
+      message: `${Math.round((summary.resolved / summary.total) * 100)}% resolution rate. Operational responsiveness is healthy.`,
+    });
+  }
+
+  // Rule 6: Resolved incidents missing notes
+  const noNotes = incidents.filter(
+    (i) => i.status === "RESOLVED" && (!i.notes || i.notes.trim() === ""),
+  );
+  if (noNotes.length > 0) {
+    insights.push({
+      type: "info",
+      message: `${noNotes.length} resolved incident${noNotes.length > 1 ? "s have" : " has"} no reflection notes. Documenting root cause improves team learning.`,
+    });
+  }
+
+  return insights;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Health Summary                                                     */
+/* ------------------------------------------------------------------ */
+
+export function getHealthSummary(
+  incidents: Incident[],
+  summary: ReturnType<typeof getSummaryMetrics>,
+): string {
+  if (summary.total === 0) return "No incidents in the current filter range.";
+
+  const parts: string[] = [];
+
+  const highCount = incidents.filter((i) => i.severity === "HIGH").length;
+  if (highCount > summary.total * 0.5) {
+    parts.push(
+      `${highCount} of ${summary.total} incidents are high risk — risk is concentrated`,
+    );
+  }
+
+  if (summary.mttrHours !== null) {
+    if (summary.mttrHours < 2) parts.push("resolution speed is strong");
+    else if (summary.mttrHours > 12)
+      parts.push(
+        `average resolution time is ${summary.mttrHours.toFixed(1)} hours — consider faster triage`,
+      );
+  }
+
+  const unresolved = summary.total - summary.resolved;
+  if (unresolved > 0) {
+    parts.push(
+      `${unresolved} incident${unresolved > 1 ? "s" : ""} still unresolved`,
+    );
+  }
+
+  return parts.length > 0
+    ? parts.join(". ") + "."
+    : "System reliability is within normal parameters.";
+}
+
+/* ------------------------------------------------------------------ */
+/*  Attention Queue                                                    */
+/* ------------------------------------------------------------------ */
+
+export interface AttentionIncident extends Incident {
+  _hoursOpen: number;
+  _overdue: boolean;
+}
+
+export function getAttentionQueue(
+  incidents: Incident[],
+  mttrHours: number | null,
+): AttentionIncident[] {
+  const avgMttr = mttrHours ?? 24;
+  const unresolved = incidents.filter((i) => i.status !== "RESOLVED");
+
+  return unresolved
+    .map((incident) => {
+      const hoursOpen =
+        (Date.now() - new Date(incident.created_at).getTime()) /
+        (1000 * 60 * 60);
+      return {
+        ...incident,
+        _hoursOpen: hoursOpen,
+        _overdue: hoursOpen > avgMttr * 2,
+      };
+    })
+    .sort((a, b) => {
+      if (a._overdue && !b._overdue) return -1;
+      if (!a._overdue && b._overdue) return 1;
+      return (b.risk_score ?? 0) - (a.risk_score ?? 0);
+    });
+}

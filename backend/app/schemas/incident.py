@@ -57,3 +57,9 @@ class IncidentOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+class IncidentListResponse(BaseModel):
+    items: List[IncidentOut]
+    total: int
+    skip: int
+    limit: int
